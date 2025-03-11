@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Link;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -68,5 +69,25 @@ class ProfileController
         }]);
 
         return response()->json($user);
+    }
+
+    public function publicProfile($username)
+    {
+        $user = User::where('username', $username)->first();
+
+        if(!$user) {
+            return response()->json(['messsage' => 'User not found'], 404);
+        }
+
+        $links = $user->links()->orderBy('order')->get();
+
+        return response()->json([
+            'user' => [
+                'username' => $user->username,
+                'bio' => $user->bio,
+                'profile_picture' => $user->profile_picture
+            ],
+            'links' => $links,
+        ]);
     }
 }
