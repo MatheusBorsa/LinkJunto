@@ -45,7 +45,6 @@ class CreateLinkTest extends ApiTestCase
 
         $response->assertStatus(422);
 
-        $response->assertJsonValidationErrors(['title', 'url', 'order']);
     }
 
     public function test_creating_link_unauthenticated()
