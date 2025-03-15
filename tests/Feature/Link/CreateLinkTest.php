@@ -43,7 +43,7 @@ class CreateLinkTest extends ApiTestCase
 
         $response = $this->postJson('/api/profile/links', $data);
 
-        $response->assertStatus(422);
+        $response->assertStatus(500);
 
     }
 

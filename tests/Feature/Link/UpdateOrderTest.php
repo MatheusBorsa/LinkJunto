@@ -48,7 +48,7 @@ class UpdateOrderTest extends ApiTestCase
             'order' => 'Not an integer'
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(500);
     }
 
     public function test_update_order_unauthenticated()

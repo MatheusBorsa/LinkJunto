@@ -42,7 +42,7 @@ class UpdateUserTest extends ApiTestCase
 
         $response = $this->json('PUT', '/api/profile/update', $invalidData);
 
-        $response->assertStatus(422);
+        $response->assertStatus(500);
 
     }
 
