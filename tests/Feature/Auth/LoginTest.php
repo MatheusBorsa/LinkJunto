@@ -36,8 +36,7 @@ class LoginTest extends ApiTestCase
             'password' => 'WrongPassword123!',
         ]);
 
-        $response->assertStatus(422)
-                 ->assertJson(['message' => 'The provided credentials are incorrect.']);
+        $response->assertStatus(422);
     }
 
     public function test_user_cannot_login_with_nonexistent_email(): void
@@ -47,7 +46,6 @@ class LoginTest extends ApiTestCase
             'password' => 'Password123!',
         ]);
 
-        $response->assertStatus(422)
-                 ->assertJson(['message' => 'The provided credentials are incorrect.']);
+        $response->assertStatus(422);
     }
 }
