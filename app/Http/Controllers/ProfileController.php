@@ -172,4 +172,44 @@ class ProfileController
             ], 500);
         }
     }
+
+    public function upload(Request $request, $userId)
+    {
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = User::findOrFail($userId);
+
+        if ($request->hasFile('profile_picture')) {
+            if ($user->profile_picture) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+
+            $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+
+            $user->profile_picture = $path;
+            $user->save();
+
+            return response()->json([
+                'message' => 'Profile picture uploaded successfully',
+                'profile_picture_url' => asset("storage/{$path}"),
+            ]);
+        }
+    }
+
+    public function showPicture($userId)
+    {
+        $user = User::findOrFail($userId);
+
+        if ($user->profile_picture) {
+            return response()->json([
+                'profile_picture_url' => asset("storage/{$user->profile_picture}")
+            ]);
+
+            return response()->json([
+                'message' => 'No profile picture found'
+            ], 404);
+        }
+    }
 }
