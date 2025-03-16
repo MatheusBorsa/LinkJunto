@@ -23,5 +23,7 @@ Route::middleware('auth:sanctum')->group(function() {
         Route::put('/links/{id}/order', [ProfileController::class, 'updateLinkOrder']);
         Route::delete('/links/{id}', [ProfileController::class, 'deleteLink']);
         Route::get('/', [ProfileController::class, 'show']);
+        Route::post('/{id}/profile-picture', [ProfilePictureController::class, 'upload']);
+        Route::get('/{id}/profile-picture', [ProfilePictureController::class, 'show']);
     });
 });
