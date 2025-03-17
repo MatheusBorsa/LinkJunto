@@ -1,10 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Link;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ProfileController
 {
@@ -13,11 +17,10 @@ class ProfileController
         try {
             $request->validate([
                 'bio' => 'nullable|string',
-                'profile_picture' => 'nullable|url'
             ]);
 
             $user = Auth::user();
-            $user->update($request->only(['bio', 'profile_picture']));
+            $user->update($request->only(['bio']));
 
             return response()->json($user);
 
@@ -29,7 +32,7 @@ class ProfileController
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'An error occured while updating the user profile.',
+                'message' => 'An error occurred while updating the user profile.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -58,13 +61,13 @@ class ProfileController
 
         } catch (ValidationException $e) {
             return response()->json([
-                'messsage' => 'Validation Error',
+                'message' => 'Validation Error',
                 'errors' => $e->errors()
             ], 422);
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'An error occured while adding the link.',
+                'message' => 'An error occurred while adding the link.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -90,12 +93,12 @@ class ProfileController
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation error',
-                'erros' => $e->errors()
+                'errors' => $e->errors()
             ], 422);
 
         } catch (\Exception $e) {
-            return respone()->json([
-                'message' => 'An error occured while updating the link order.',
+            return response()->json([
+                'message' => 'An error occurred while updating the link order.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -107,7 +110,7 @@ class ProfileController
             $link = Link::where('user_id', Auth::id())->findOrFail($id);
             $link->delete();
 
-            return response()->json(['message' => 'Link deleted succesfully']);
+            return response()->json(['message' => 'Link deleted successfully']);
 
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -117,7 +120,7 @@ class ProfileController
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'An error occured while deleting the link',
+                'message' => 'An error occurred while deleting the link',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -130,11 +133,12 @@ class ProfileController
                 $query->orderBy('order');
             }]);
 
+            $user->profile_picture = $user->profile_picture ? asset("storage/{$user->profile_picture}") : null;
             return response()->json($user);
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'An error occured while fetching the user profile.',
+                'message' => 'An error occurred while fetching the user profile.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -144,30 +148,27 @@ class ProfileController
     {
         try {
             $user = User::where('username', $username)->first();
-
-            if(!$user) {
-                return response()->json(['messsage' => 'User not found'], 404);
+    
+            if (!$user) {
+                return response()->json(['message' => 'User not found'], 404);
             }
-
+    
             $links = $user->links()->orderBy('order')->get();
-
+    
+            $profilePictureUrl = $user->profile_picture ? asset("storage/{$user->profile_picture}") : null;
+    
             return response()->json([
                 'user' => [
                     'username' => $user->username,
                     'bio' => $user->bio,
-                    'profile_picture' => $user->profile_picture
+                    'profile_picture' => $profilePictureUrl,
                 ],
                 'links' => $links,
             ]);
-
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'User not found.'
-            ], 404);
-
+    
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'An error occured while fetching the public profile.',
+                'message' => 'An error occurred while fetching the public profile.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -175,41 +176,63 @@ class ProfileController
 
     public function upload(Request $request, $userId)
     {
-        $request->validate([
-            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        try {
+            $request->validate([
+                'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-        $user = User::findOrFail($userId);
+            $user = User::findOrFail($userId);
 
-        if ($request->hasFile('profile_picture')) {
-            if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+            if ($request->hasFile('profile_picture')) {
+                if ($user->profile_picture) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                }
+
+                $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+
+                $user->profile_picture = $path;
+                $user->save();
+
+                return response()->json([
+                    'message' => 'Profile picture uploaded successfully',
+                    'profile_picture_url' => asset("storage/{$path}"),
+                ]);
             }
 
-            $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-
-            $user->profile_picture = $path;
-            $user->save();
-
+        } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'Profile picture uploaded successfully',
-                'profile_picture_url' => asset("storage/{$path}"),
-            ]);
+                'message' => 'Validation Error',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while uploading the profile picture.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
     public function showPicture($userId)
     {
-        $user = User::findOrFail($userId);
+        try {
+            $user = User::findOrFail($userId);
 
-        if ($user->profile_picture) {
-            return response()->json([
-                'profile_picture_url' => asset("storage/{$user->profile_picture}")
-            ]);
+            if ($user->profile_picture) {
+                return response()->json([
+                    'profile_picture_url' => asset("storage/{$user->profile_picture}")
+                ]);
+            }
 
             return response()->json([
                 'message' => 'No profile picture found'
             ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while fetching the profile picture.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }
