@@ -9,21 +9,21 @@ Route::get('/user', action: function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::post('/register', [AuthController::class,'register']);
-Route::post('/login', [AuthController::class,'login']);
-Route::get('/public/profile/{username}', [ProfileController::class, 'publicProfile']);
+Route::post('v1/register', [AuthController::class,'register']);
+Route::post('v1/login', [AuthController::class,'login']);
+Route::get('v1/profile/{username}', [ProfileController::class, 'publicProfile']);
 
 Route::middleware('auth:sanctum')->group(function() {
 
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('v1/logout', [AuthController::class, 'logout']);
 
-    Route::prefix('/profile')->group(function() {
-        Route::put('/update', [ProfileController::class, 'updateUser']);
+    Route::prefix('v1/profiles')->group(function() {
+        Route::put('/', [ProfileController::class, 'updateUser']);
         Route::post('/links', [ProfileController::class, 'addLink']);
-        Route::put('/links/{id}/order', [ProfileController::class, 'updateLinkOrder']);
+        //Route::put('/links/{id}/order', [ProfileController::class, 'updateLinkOrder']);
         Route::delete('/links/{id}', [ProfileController::class, 'deleteLink']);
         Route::get('/', [ProfileController::class, 'show']);
-        Route::post('/{id}/profile-picture', [ProfileController::class, 'upload']);
-        Route::get('/{id}/profile-picture', [ProfileController::class, 'showPicture']);
+        Route::post('/{id}', [ProfileController::class, 'upload']);
+        Route::get('/{id}', [ProfileController::class, 'showPicture']);
     });
 });
